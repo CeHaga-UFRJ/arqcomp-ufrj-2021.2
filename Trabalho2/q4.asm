@@ -110,7 +110,7 @@ STR1_MAIOR:
 
 ; Se str2 eh maior
 STR2_MAIOR:
-  LDA #FFh ; Acumulador fica com -1
+  LDA #0FFh ; Acumulador fica com -1
   JMP RETORNO
 
 ; Se str1 = str2
@@ -123,31 +123,3 @@ RETORNO:
   RET
 
 END 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

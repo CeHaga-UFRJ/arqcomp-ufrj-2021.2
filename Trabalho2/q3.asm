@@ -12,7 +12,13 @@ CLEARBANNER EQU 3
 
 
 ORG 1100
+                 SP: DW 0
                  TAM: DB 6 ; Tamanho dos vetores
+
+                 ;U: DB 2, 4, 5, 3 ; Vetor U
+                 ;V: DB 3, 2, 2, 2; Vetor V
+
+                 ;Exemplo Overflow
                  U: DB 127, 127, 127, 127, 127, 127 ; Vetor U
                  V: DB 100, 100, 100, 100, 100, 100; Vetor V
 
@@ -95,37 +101,57 @@ INCR:
 
 
 PRINTAR:         ; A PARTIR DAQUI SERVE PARA PRINTAR O RESULTADO
+                 LDA PRODINT+1
+                 PUSH
+                 JSR ROTINA_ALTA
 
-PRIMEIRO_NUMERO: ; O PRIMEIRO NÚMERO SÃO OS 4 PRIMEIROS BITS DO NÚMERO DE 16 BITS
+                 LDA PRODINT+1
+                 PUSH
+                 LDA CARACTER
+                 PUSH
+                 JSR ROTINA_BAIXA
 
-                 ; PEGO APENAS OS 4 BITS MAIS SIGNIFICATIVOS E GUARDO EM CARACTER
-               LDA PRODINT+1
-               SHR
-               SHR
-               SHR
-               SHR
-               STA CARACTER
+                 LDA PRODINT
+                 PUSH
+                 JSR ROTINA_ALTA
 
-               ; TESTO SE O NÚMERO É MENOR QUE AH OU 10 DECIMAL
-               SUB #10
-               JN  DEC0 ; CASO SEJA MENOR QUE 10 PULO PARA ONDE CONVERTE DE 0 A 9 PARA ASCII
-               ; CASO SEJA MAIOR CONINUO PARA CONVERTER DE LETRA PARA ASCII
+                 LDA PRODINT
+                 PUSH
+                 LDA CARACTER
+                 PUSH
+                 JSR ROTINA_BAIXA
 
-               LDA CARACTER ; CARREGO O CARACTER
-               ADD #37H ; CONVERTO HEXADECIMAL MAIOR QUE 9 PARA ASCII
-               OUT BANNER ; ESCREVO NO BANNER
-
-               JMP SEGUNDO_NUMERO ; VOU PARA O PRÓXIMO NÚMERO
-
-DEC0: ; CONVERTE NÚMEROS DECIMAIS PARA ASCII
-               LDA CARACTER
-               ADD #30H
-               OUT BANNER
+                 JMP FIM
 
 
+ROTINA_ALTA:     STS SP
+                 POP
+                 POP
 
-SEGUNDO_NUMERO:
-                LDA CARACTER
+                 POP
+                 SHR
+                 SHR
+                 SHR
+                 SHR
+                 STA CARACTER
+
+                 ; TESTO SE O NÚMERO É MENOR QUE AH OU 10 DECIMAL
+                 SUB #10
+                 JN  DEC ; CASO SEJA MENOR QUE 10 PULO PARA ONDE CONVERTE DE 0 A 9 PARA ASCII
+                 ; CASO SEJA MAIOR CONINUO PARA CONVERTER DE LETRA PARA ASCII
+
+                 LDA CARACTER ; CARREGO O CARACTER
+                 ADD #37H ; CONVERTO HEXADECIMAL MAIOR QUE 9 PARA ASCII
+                 OUT BANNER ; ESCREVO NO BANNER
+
+                 LDS SP
+                 RET
+ROTINA_BAIXA:
+                STS SP
+                POP
+                POP
+
+                POP
                 SHL
                 SHL
                 SHL
@@ -133,80 +159,31 @@ SEGUNDO_NUMERO:
                 STA CARACTER
 
 
-                LDA PRODINT+1
+                POP
                 SUB CARACTER
                 STA CARACTER
 
                 SUB #10
-                JN  DEC1 ;
-
-                LDA CARACTER
-                ADD #37H
-                OUT BANNER
-                JMP TERCEIRO_NUMERO
-
-DEC1:
-               LDA CARACTER
-               ADD #30H
-               OUT BANNER
-
-
-
-
-
-TERCEIRO_NUMERO:
-                LDA PRODINT
-                SHR
-                SHR
-                SHR
-                SHR
-                STA CARACTER
-
-                SUB #10
-                JN  DEC2
+                JN  DEC
 
                 LDA CARACTER
                 ADD #37H
                 OUT BANNER
 
-                JMP QUARTO_NUMERO
-
-DEC2:
-                LDA CARACTER
-                ADD #30H
-                OUT BANNER
+                LDS SP
+                RET
 
 
+DEC: ; CONVERTE NÚMEROS DECIMAIS PARA ASCII
+                 LDA CARACTER
+                 ADD #30H
+                 OUT BANNER
+
+                 LDS SP
+                 RET
 
 
 
-QUARTO_NUMERO:
-              LDA CARACTER
-              SHL
-              SHL
-              SHL
-              SHL
-              STA CARACTER
-
-
-              LDA PRODINT
-              SUB CARACTER
-              STA CARACTER
-
-              SUB #10
-              JN  DEC3
-
-              LDA CARACTER
-              ADD #37H
-              OUT BANNER
-
-              JMP FIM
-
-DEC3:
-              LDA CARACTER
-              ADD #30H
-              OUT BANNER
-              JMP FIM
 
 OVERFLOW:
              ADC #0

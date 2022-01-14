@@ -1,7 +1,7 @@
 ;---------------------------------------------------
 ; Programa: Rotina para comparacao de strings
 ; Autor: Carlos Bravo, Markson Arguello e Pedro Ancelmo
-; Data: 10/01/2021
+; Data: 10/01/2022
 ;---------------------------------------------------
 ORG 200h
 SP: DW 0 ; Stack pointer

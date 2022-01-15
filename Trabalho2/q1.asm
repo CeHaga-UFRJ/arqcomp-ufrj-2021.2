@@ -1,10 +1,15 @@
 ;---------------------------------------------------
-; Programa:
-; Autor:
-; Data:
+; Programa: Escrever uma rotina para somar ou para multiplicar
+; dois números de 8 bits em complemento a dois, cujos endereços
+; são passados como parâmetros na pilha.
+; Autor: Carlos Bravo, Markson Arguello, Pedro Ancelmo
+; Data: 14/01/2022
 ;---------------------------------------------------
+SUM EQU 0
+VEZES EQU 1
+END_BASE EQU 04h
 
-ORG 200h
+ORG 400h
   OP: DS 1 ; Operacao a ser realizada
   SP: DW 0 ; Stack Pointer da pilha
   END_A: DW 0 ; Primeiro operando
@@ -15,7 +20,50 @@ ORG 200h
   SINAL: DS 1 ; Variavel para salvar os sinais
   OVERFLOW: DS 1 ; Variavel para salvar se houve overflow ou nao
 
+  NUM1: DS 1
+  NUM2: DS 1
+
+ORG 430h
+  NUM3: DW 0
+
+ORG 160h
+
+
+
+
 ORG 0
+INICIO:
+  LDA #1
+  STA NUM1
+
+  LDA #END_BASE
+  PUSH
+
+  LDA #NUM1
+  PUSH
+
+  LDA #0FFh
+  STA NUM2
+
+  LDA #END_BASE
+  PUSH
+
+  LDA #NUM2
+  PUSH
+
+
+  LDA #END_BASE
+  PUSH
+
+  LDA #NUM3
+  PUSH
+
+  LDA #1
+
+  JSR CALC
+  HLT
+
+
 CALC:
   STA OP ; Salva o operador do acumulador
 
@@ -28,12 +76,12 @@ CALC:
   POP
   STA RESULT+1
 
-  POP ; Le o primeiro operando da pilha
+  POP ; Le o endereco do primeiro operando da pilha
   STA END_A
   POP
   STA END_A+1
 
-  POP ; Le o segundo operando da pilha
+  POP ; Le o endereco do segundo operando da pilha
   STA END_B
   POP
   STA END_B+1
@@ -58,7 +106,8 @@ CONFERE_A:
   AND #80h
   STA SINAL
   JZ CONFERE_B
-  NOT A
+  LDA A
+  NOT
   ADD #1
   STA A
 
@@ -67,8 +116,13 @@ CONFERE_B:
   AND #80h
   SUB SINAL
   STA SINAL
+
+  LDA B
+  AND #80h
+
   JZ LOOP_MULT
-  NOT B
+  LDA B
+  NOT
   ADD #1
   STA B
 
@@ -79,12 +133,12 @@ LOOP_MULT:
   STA B
 
   LDA A
-  ADD C
-  STA C
+  ADD @RESULT
+  STA @RESULT
 
-  LDA C+1
+  LDA @RESULT+1
   ADC #0
-  STA C+1
+  STA @RESULT+1
 
   AND #80h
   JZ LOOP_MULT
@@ -97,13 +151,15 @@ FIM_MULT:
   LDA SINAL
   JZ RETORNO
 
-  NOT C
+  LDA @RESULT
+  NOT
   ADD #1
-  STA C
+  STA @RESULT
 
-  NOT C+1
+  LDA @RESULT+1
+  NOT
   ADC #0
-  STA C+1
+  STA @RESULT+1
 
   JMP RETORNO
 
@@ -116,7 +172,7 @@ EH_ZERO:
 
 SOMA:
   LDA A
-  AND #80h
+  AND #80h ; Verifica se primeiro bit e 0
   STA SINAL
   LDA B
   AND #80h
@@ -154,7 +210,7 @@ SOMA_POSITIVO:
   JMP RETORNO
 
 SOMA_NEGATIVO:
-  LDA #FF
+  LDA #0FFh
   STA @RESULT+1
   JMP RETORNO
 

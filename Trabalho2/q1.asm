@@ -20,16 +20,14 @@ ORG 400h
   RESULT_ALTO: DW 0
   SINAL: DS 1 ; Variavel para salvar os sinais
   OVERFLOW: DS 1 ; Variavel para salvar se houve overflow ou nao
-  NUM1: DS 1
-  NUM2: DS 1
+  NUM1: DB 10h
+  NUM2: DB 10h
 
 ORG 430h
   NUM3: DW 0
 
 ORG 0
 INICIO:
-  LDA #1
-  STA NUM1
 
   LDA #END_BASE
   PUSH
@@ -37,8 +35,6 @@ INICIO:
   LDA #NUM1
   PUSH
 
-  LDA #0FFh
-  STA NUM2
 
   LDA #END_BASE
   PUSH
@@ -92,7 +88,7 @@ CALC:
   STA RESULT_ALTO
   LDA RESULT+1
   ADC #0
-  STA RESULT_ALTO
+  STA RESULT_ALTO+1
 
   LDA OP
   JZ SOMA ; Se for 0 faz uma soma

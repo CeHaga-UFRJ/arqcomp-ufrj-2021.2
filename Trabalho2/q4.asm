@@ -7,9 +7,9 @@ ORG 200h
 SP: DW 0 ; Stack pointer
 PTR1: DW 0 ; Ponteiro para str1
 PTR2: DW 0 ; Ponteiro para str2
-STR1: STR "abcdE" ; Primeira string
+STR1: STR "abcd" ; Primeira string
       DB 0
-STR2: STR "abcdE" ; Segunda string
+STR2: STR "abd" ; Segunda string
       DB 0
 END_BASE EQU 02h ; Parte alta do endereco das strings
 
@@ -78,14 +78,20 @@ COMPARACAO:
   ; Se deu 0, eh mesma letra, continua para a proxima
 
   ; Anda 1 com o ponteiro da str1
-  LDS PTR1
-  POP
-  STS PTR1
+  LDA PTR1
+  ADD #1
+  STA PTR1
+  LDA PTR1+1
+  ADC #0
+  STA PTR1+1
 
   ; Anda 1 com o ponteiro da str2
-  LDS PTR2
-  POP
-  STS PTR2
+  LDA PTR2
+  ADD #1
+  STA PTR2
+  LDA PTR2
+  ADC #0
+  STA PTR2
 
   ; Repete
   JMP COMPARACAO
@@ -117,31 +123,3 @@ RETORNO:
   RET
 
 END 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

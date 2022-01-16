@@ -38,6 +38,7 @@ INIT:
 
   LDA #0FFh
   PUSH
+
   JSR ROTINA
   HLT
 
@@ -60,100 +61,122 @@ ROTINA:
 
 
 LOOP:
+  ;
   LDA I
   SUB #32
-  JZ PRINT
+  JZ PRINT ; se i = 32 printa o vetor
 
-FOR_ADDITION:
+FOR_ADDITION: ;Loop para verificar se precisa adicionar 3
+  ; acc = j - 10
   LDA J
   SUB #10
   JZ SHIFT
 
+  ;J++
   LDA J
   ADD #1
   STA J
 
+  ;ACC = V[J] - 5
   LDA @PTR
   SUB #5
   JN PROX
 
-ADDITION:
+ADDITION: ;Adição de 3 na coluna que precisar
+  ;V[J] += 3
   LDA @PTR
   ADD #3
   STA @PTR
 
 
-PROX:
+PROX: ; Faz PTR apontar pro proximo elemento do vetor
+  ;PTR++
   LDA PTR
   ADD #1
   STA PTR
   JMP FOR_ADDITION
 
-SHIFT:
+SHIFT: ; Começo da parte de shift
+  ;J++
   LDA #0
   STA J
 
+  ;PTR = V
   LDA END_RESULT
   STA PTR
 
   ;LDA END_RESULT+1
   ;STA PTR+1
 
-LOOP_SHIFT:
+LOOP_SHIFT: ;Loop sobre os 9 primeiros elementos dando shift neles
+  ; ACC = J - 9
   LDA J
   SUB #9
   JZ LAST
 
+  ;J++
   LDA J
   ADD #1
   STA J
 
+  ;Parte do shift
+  ;V[J] <<= 1
   LDA @PTR
   SHL
   STA @PTR
 
+  ;PTR++
   LDA PTR
   ADD #1
   STA PTR
 
+  ;PTR
   LDA @PTR
-  AND #8
+  AND #8   ;1000
   JZ LOOP_SHIFT
 
+  ;V[J] -= 8
   LDA @PTR
   SUB #8
   STA @PTR
 
+  ;PTR++
   LDA PTR
   SUB #1
   STA PTR
 
+  ;V[J]++
   LDA @PTR
   ADD #1
   STA @PTR
 
+  ;PTR++
   LDA PTR
   ADD #1
   STA PTR
 
   JMP LOOP_SHIFT
 
-
-
-LAST:
+LAST: ; Último elemento recebe o que estiver em NUM2+1
+  ;V[J] <<= 1
   LDA @PTR
   SHL
   STA @PTR
 
+
   LDA NUM2+1
-  AND #128
+  AND #128 ;1000 0000
   JZ ZERO
 
+  ;V[J]++
   LDA @PTR
   ADD #1
   STA @PTR
 
-ZERO:
+ZERO: ; A partir daqui é shift nos numeros abaixo
+  ;NUM2+1    NUM2       NUM1+1       NUM1
+  ;1000 0001 0000 0001  0000 0001    1000 0000
+
   LDA NUM2+1
   SHL
   STA NUM2+1
@@ -192,7 +215,7 @@ SHIFT_NUM1_ALTO:
   ADD #1
   STA NUM1+1
 
-INCR:
+INCR: ; Apenas arruma algumas variáveis
   LDA NUM1
   SHL
   STA NUM1
@@ -211,7 +234,7 @@ INCR:
   ;STA PTR+1
 
   JMP LOOP
-PRINT:
+PRINT: ; A partir daqui é print no banner
   OUT CLEARBANNER
 LOOP_PRINT:
   LDA J

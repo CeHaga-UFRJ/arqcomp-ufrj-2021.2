@@ -17,19 +17,14 @@ ORG 400h
   A: DS 1
   B: DS 1
   RESULT: DW 0 ; Endereco do resultado
+  RESULT_ALTO: DW 0
   SINAL: DS 1 ; Variavel para salvar os sinais
   OVERFLOW: DS 1 ; Variavel para salvar se houve overflow ou nao
-
   NUM1: DS 1
   NUM2: DS 1
 
 ORG 430h
   NUM3: DW 0
-
-ORG 160h
-
-
-
 
 ORG 0
 INICIO:
@@ -92,6 +87,13 @@ CALC:
   LDA @END_B
   STA B
 
+  LDA RESULT
+  ADD #1
+  STA RESULT_ALTO
+  LDA RESULT+1
+  ADC #0
+  STA RESULT_ALTO
+
   LDA OP
   JZ SOMA ; Se for 0 faz uma soma
 
@@ -136,9 +138,9 @@ LOOP_MULT:
   ADD @RESULT
   STA @RESULT
 
-  LDA @RESULT+1
+  LDA @RESULT_ALTO
   ADC #0
-  STA @RESULT+1
+  STA @RESULT_ALTO
 
   AND #80h
   JZ LOOP_MULT
@@ -156,17 +158,17 @@ FIM_MULT:
   ADD #1
   STA @RESULT
 
-  LDA @RESULT+1
+  LDA @RESULT_ALTO
   NOT
   ADC #0
-  STA @RESULT+1
+  STA @RESULT_ALTO
 
   JMP RETORNO
 
 EH_ZERO:
   LDA #0 ; Nao houve overflow, acumulador eh 0
   STA @RESULT ; Salva 0 nos 2 bytes do resultado
-  STA @RESULT+1
+  STA @RESULT_ALTO
   STA OVERFLOW
   JMP RETORNO
 
@@ -206,12 +208,12 @@ SOMA_IGUAIS:
 
 SOMA_POSITIVO:
   LDA #0
-  STA @RESULT+1
+  STA @RESULT_ALTO
   JMP RETORNO
 
 SOMA_NEGATIVO:
   LDA #0FFh
-  STA @RESULT+1
+  STA @RESULT_ALTO
   JMP RETORNO
 
 RETORNO:

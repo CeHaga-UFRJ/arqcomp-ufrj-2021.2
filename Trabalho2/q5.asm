@@ -6,6 +6,7 @@
 END_BASE EQU 02h
 
 ORG 200h ; Elemento 1
+INICIO_LISTA: DW STR1 ; Inicio da lista encadeada
 STR1: STR "AAAAAAAA" ; Valor
 DW STR2 ; Ponteiro pro proximo elemento
 
@@ -23,15 +24,17 @@ DW 0 ; Com ponteiro nulo, a ser modificado
 
 ORG 400h ; Variaveis da main
 PULA_LINHA: DB 0Ah
-PTR: DW STR1
-PTR_ALTO: DW 0
+PTR: DW 0
+PTR_AUX: DW 0
 AUX: DB 8
+SP_ZERO: DW 0
 
 ORG 500h ; Variaveis da rotina de insercao
 SP_INS: DW 0 ; Stack pointer
 PTR_ATUAL: DW 0 ; Ponteiro pro elemento atual
 PTR_ANT: DW 0 ; Ponteiro pro elemento anterior
 PTR_ELE: DW 0 ; Ponteiro para o elemento a ser adicionado
+TEMP: DW 0
 
 ORG 600h ; Variaveis da rotina de comparacao
 SP_COMP: DW 0 ; Stack pointer
@@ -43,7 +46,7 @@ ORG 0
 INICIO:
   LDA #END_BASE
   PUSH
-  LDA #STR1
+  LDA #INICIO_LISTA
   PUSH
 
   LDA #END_BASE
@@ -53,13 +56,22 @@ INICIO:
 
   JSR ROTINA_INSERCAO
 
+  LDA INICIO_LISTA
+  STA PTR
+
+  LDA INICIO_LISTA+1
+  STA PTR+1
+
 IMPRIME:
   LDA #2
   TRAP @PTR
 
-  LDS PTR
-  POP
-  STS PTR
+  LDA PTR
+  ADD #1
+  STA PTR
+  LDA PTR+1
+  ADC #0
+  STA PTR+1
 
   LDA AUX
   SUB #1
@@ -68,12 +80,28 @@ IMPRIME:
   JNZ IMPRIME
 
   LDA @PTR
-  JZ PTR_ZERO
+  STA PTR_AUX
+  PUSH
+
+  LDA PTR
+  ADD #1
+  STA TEMP
+  LDA PTR+1
+  ADC #0
+  STA TEMP+1
+  LDA @TEMP
+  STA PTR_AUX+1
+  PUSH
+
+  LDA PTR_AUX
+  STA PTR
+  LDA PTR_AUX+1
+  STA PTR+1
+
+  JSR EH_ZERO
+  JZ FIM
 
 CONTINUA:
-  LDS @PTR
-  STS PTR
-
   LDA #8
   STA AUX
 
@@ -85,13 +113,6 @@ CONTINUA:
 FIM:
   HLT
 
-PTR_ZERO:
-  LDS PTR
-  POP
-  STS PTR_ALTO
-  LDA @PTR_ALTO
-  JZ FIM
-  JMP CONTINUA
 
 ROTINA_INSERCAO:
   ; Salva o Stack Pointer
@@ -105,12 +126,21 @@ ROTINA_INSERCAO:
   STA PTR_ELE+1
 
   POP
-  STA PTR_ATUAL
+  STA PTR_ANT
   POP
-  STA PTR_ATUAL+1
+  STA PTR_ANT+1
 
-  LDS PTR_ATUAL
-  STS PTR_ANT
+  LDA @PTR_ANT
+  STA PTR_ATUAL
+
+  LDA PTR_ANT
+  ADD #1
+  STA TEMP
+  LDA PTR_ANT+1
+  ADC #0
+  STA TEMP+1
+  LDA @TEMP
+  STA PTR_ATUAL+1
 
 PROCURA:
   LDA #END_BASE
@@ -126,24 +156,67 @@ PROCURA:
   JSR ROTINA_COMP
   JP INSERE
 
-  LDS PTR_ATUAL
-  POP
-  POP
-  POP
-  POP
-  POP
-  POP
-  POP
-  POP
-  STS PTR_ANT
-  LDS @PTR_ANT
-  STS PTR_ATUAL
+  LDA PTR_ATUAL
+  ADD #8
+  STA PTR_ANT
+  LDA PTR_ATUAL+1
+  ADC #0
+  STA PTR_ANT+1
+
+  LDA @PTR_ANT
+  STA PTR_ATUAL
+  PUSH
+
+  LDA PTR_ANT
+  ADD #1
+  STA TEMP
+  LDA PTR_ANT+1
+  ADC #0
+  STA TEMP+1
+  LDA @TEMP
+  STA PTR_ATUAL+1
+  PUSH
+
+  JSR EH_ZERO
+  JZ INSERE
 
   JMP PROCURA
 
 INSERE:
+  LDA PTR_ELE
+  STA @PTR_ANT
 
-  HLT
+  LDA PTR_ANT
+  ADD #1
+  STA TEMP
+  LDA PTR_ANT+1
+  ADC #0
+  STA TEMP+1
+  LDA PTR_ELE+1
+  STA @TEMP
+
+  LDA PTR_ELE
+  ADD #8
+  STA PTR_ELE
+  LDA PTR_ELE+1
+  ADC #0
+  STA PTR_ELE+1
+   
+  LDA PTR_ATUAL
+  STA @PTR_ELE
+
+  LDA PTR_ELE
+  ADD #1
+  STA TEMP
+  LDA PTR_ELE+1
+  ADC #0
+  STA TEMP+1
+  LDA PTR_ATUAL+1
+  STA @TEMP
+
+FIM_ROTINA:
+  LDS SP_INS
+  RET
 
 ROTINA_COMP:
   ; Salva o Stack Pointer
@@ -181,14 +254,20 @@ COMPARACAO:
   ; Se deu 0, eh mesma letra, continua para a proxima
 
   ; Anda 1 com o ponteiro da str1
-  LDS PTR1
-  POP
-  STS PTR1
+  LDA PTR1
+  ADD #1
+  STA PTR1
+  LDA PTR1+1
+  ADC #0
+  STA PTR1+1
 
   ; Anda 1 com o ponteiro da str2
-  LDS PTR2
-  POP
-  STS PTR2
+  LDA PTR2
+  ADD #1
+  STA PTR2
+  LDA PTR2
+  ADC #0
+  STA PTR2
 
   ; Repete
   JMP COMPARACAO
@@ -210,6 +289,26 @@ IGUAL:
 RETORNO:
   ; Volta com o Stack Pointer e retorna pra chamada
   LDS SP_COMP
+  RET
+
+EH_ZERO:
+  STS SP_ZERO
+  POP
+  POP
+
+  POP
+  JNZ RET_UM
+  POP
+  JNZ RET_UM
+
+  LDA #0
+  JMP RET_GERAL
+
+RET_UM:
+  LDA #1
+
+RET_GERAL:
+  LDS SP_ZERO
   RET
 
 END 0

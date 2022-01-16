@@ -11,9 +11,13 @@ CLEARBANNER EQU 3
 BANNER  EQU 2
 
 ORG 500h
+    NUM1: DS 4
     RESULT: DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    NUM1: DW 0
-    NUM2: DW 0
+
+    END_NUM0: DW 0
+    END_NUM1: DW 0
+    END_NUM2: DW 0
+    END_NUM3: DW 0
 
     PTR: DW RESULT
     END_RESULT: DW RESULT
@@ -27,16 +31,22 @@ ORG 0
 
 INIT:
 
-  LDA #0FFh
+  LDA #0
+  STA NUM1
+
+  LDA #0
+  STA NUM1+1
+
+  LDA #0
+  STA NUM1+2
+
+  LDA #0
+  STA NUM1+3
+
+  LDA #END_BASE
   PUSH
 
-  LDA #0FFh
-  PUSH
-
-  LDA #0FFh
-  PUSH
-
-  LDA #0FFh
+  LDA #NUM1
   PUSH
 
   JSR ROTINA
@@ -48,16 +58,35 @@ ROTINA:
   POP
 
   POP
-  STA NUM1
+  STA END_NUM0
 
   POP
-  STA NUM1+1
+  STA END_NUM0+1
 
-  POP
-  STA NUM2
 
-  POP
-  STA NUM2+1
+  LDA END_NUM0
+  ADD #1
+  STA END_NUM1
+
+  LDA END_NUM0+1
+  ADC #0
+  STA END_NUM1+1
+
+  LDA END_NUM1
+  ADD #1
+  STA END_NUM2
+
+  LDA END_NUM1+1
+  ADC #0
+  STA END_NUM2+1
+
+  LDA END_NUM2
+  ADD #1
+  STA END_NUM3
+
+  LDA END_NUM2+1
+  ADC #0
+  STA END_NUM3+1
 
 
 LOOP:
@@ -164,7 +193,7 @@ LAST: ; Último elemento recebe o que estiver em NUM2+1
   STA @PTR
 
 
-  LDA NUM2+1
+  LDA @END_NUM3
   AND #128 ;1000 0000
   JZ ZERO
 
@@ -177,48 +206,48 @@ ZERO: ; A partir daqui é shift nos numeros abaixo
   ;NUM2+1    NUM2       NUM1+1       NUM1
   ;1000 0001 0000 0001  0000 0001    1000 0000
 
-  LDA NUM2+1
+  LDA @END_NUM3
   SHL
-  STA NUM2+1
+  STA @END_NUM3
 
-  LDA NUM2
+  LDA @END_NUM2
   AND #128
   JZ SHIFT_NUM2
 
-  LDA NUM2+1
+  LDA @END_NUM3
   ADD #1
-  STA NUM2+1
+  STA @END_NUM3
 
 SHIFT_NUM2:
-  LDA NUM2
+  LDA @END_NUM2
   SHL
-  STA NUM2
+  STA @END_NUM2
 
-  LDA NUM1+1
+  LDA @END_NUM1
   AND #128
   JZ SHIFT_NUM1_ALTO
 
-  LDA NUM2
+  LDA @END_NUM2
   ADD #1
-  STA NUM2
+  STA @END_NUM2
 
 SHIFT_NUM1_ALTO:
-  LDA NUM1+1
+  LDA @END_NUM1
   SHL
-  STA NUM1+1
+  STA @END_NUM1
 
-  LDA NUM1
+  LDA @END_NUM0
   AND #128
   JZ INCR
 
-  LDA NUM1+1
+  LDA @END_NUM1
   ADD #1
-  STA NUM1+1
+  STA @END_NUM1
 
 INCR: ; Apenas arruma algumas variáveis
-  LDA NUM1
+  LDA @END_NUM0
   SHL
-  STA NUM1
+  STA @END_NUM0
 
   LDA I
   ADD #1

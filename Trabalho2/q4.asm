@@ -1,7 +1,7 @@
 ;---------------------------------------------------
 ; Programa: Rotina para comparacao de strings
 ; Autor: Carlos Bravo, Markson Arguello e Pedro Ancelmo
-; Data: 10/01/2021
+; Data: 10/01/2022
 ;---------------------------------------------------
 ORG 200h
 SP: DW 0 ; Stack pointer
@@ -69,7 +69,7 @@ COMPARACAO:
   OR #0
   JZ STR1_MAIOR ; str1 > str2
 
-  ; Se nenhuma das duas acabou diminui o ascii de cada letra
+  ; Se nenhuma das duas acabou subtrai o ascii de cada letra
   LDA @PTR1
   SUB @PTR2
   JN STR2_MAIOR ; Se negativo, str2 > str1

@@ -12,7 +12,7 @@ CLEARBANNER EQU 3
 
 
 ORG 1100
-                 SP: DW 0
+                 SP: DW 0 ; Stack Pointer
                  TAM: DB 20 ; Tamanho dos vetores
 
                  U: DB 0FFh, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0FFh, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1; Vetor U
@@ -31,9 +31,10 @@ ORG 1100
 
                  ;Caracter a ser escrito no banner
                  CARACTER: DB 0
-                 SINAL: DS 1
-                 A: DS 1
-                 B: DS 1
+
+                 SINAL: DS 1 ; Guarda sinal do resultado
+                 A: DS 1 ; Variável auxiliar
+                 B: DS 1 ; Variável auxiliar
 
 
                  ;String a ser imprimida no banner em caso de overflow
@@ -41,9 +42,9 @@ ORG 1100
 
 
 ORG 1000
-                 PRODINT: DW 0  ; Resultado
-                 RESULTADO:DW 0
-                 FLAG_OVERFLOW: DS 1
+                 PRODINT: DW 0  ; Resultado parcial
+                 RESULTADO:DW 0 ; Resultado total
+                 FLAG_OVERFLOW: DS 1 ; Indica se houve overflow
 
 ORG 0
 
@@ -57,119 +58,142 @@ LOOP:
                  SUB TAM ; ACC = ACC - TAM  = I - TAM
                  JZ PRINTAR ; CASO I < TAM VAI PRA MULTIPLICACAO E CASO I == TAM PRINTA O RESULTADO
 
-MULT:
-  LDA #0
+MULT: ; Começa multiplicação
+  ; Reseta o PRODINT
+  LDA #0 ;
   STA PRODINT
   STA PRODINT+1
 
- LDA @PTRU
- STA A
+  ; Salva primeiro operando
+  LDA @PTRU
+  STA A
 
- LDA @PTRV
- STA B
+  ; Salva segundo operando
+  LDA @PTRV
+  STA B
 
-CONFERE_A:
+CONFERE_A: ; Confere sinal de A e verifica se é negativo
   LDA A
-  AND #80h
-  STA SINAL
-  JZ CONFERE_B
+  AND #80h ; Se o último bit é 1 então o número é negativo
+  STA SINAL ;Guardamos o sinal de A
+  JZ CONFERE_B ; Se A é positivo (SINAL == 0) então não precisa fazer nada e pode conferir sinal de B
+
+  ; Se chegou até aqui então A é negativo
+  ; Transformamos A em positivo
   LDA A
   NOT
   ADD #1
   STA A
 
-CONFERE_B:
+CONFERE_B: ; Confere sinal de B e verifica se é negativo
   LDA B
-  AND #80h
+  AND #80h ; Se o último bit é 1 então o número é negativo
+  ; Subtraimos o sinal de B com o sinal de A
   SUB SINAL
+  ; Se os sinais são iguais então SINAL será 0, caso contrário SINAL será 1
   STA SINAL
 
+  ;Verificamos o sinal de B novamente
   LDA B
   AND #80h
 
-  JZ LOOP_MULT
+  JZ LOOP_MULT ; Se B for positivo não precisamos fazer nada
+
+  ; Se chegou aqui então B é negativo
+  ; Transformamos B para positivo
   LDA B
   NOT
   ADD #1
   STA B
 
-LOOP_MULT:
+LOOP_MULT: ; Loop da multiplicação
   LDA B
-  JZ FIM_MULT
+  JZ FIM_MULT ; Se já adicionamos A ao resultado B vezes então vai para o final da multiplicação
+  ; Se não
+  ; Subtraimos 1 de B
   SUB #1
   STA B
 
+  ; Adicionamos A ao PRODINT
   LDA A
   ADD PRODINT
   STA PRODINT
 
+  ; Adicionamos o carry aos 8 bits mais significativos
   LDA PRODINT+1
   ADC #0
   STA PRODINT+1
 
+  ; Verificamos se o bit mais significativo do número de 16 bits é 1
   AND #80h
-  JZ LOOP_MULT
+  JZ LOOP_MULT ; Se for 0 então o resultado ainda é positivo e continuamos a multiplicar
 
+  ; Se for 1 então houve overflow já que A e B são positivos e esse 1 significaria que resultado é negativo
+  ; E a multiplicação de dois números positivos não pode ser negativo
   JMP OVERFLOW
 
-FIM_MULT:
-  LDA SINAL
+FIM_MULT: ; Fim da multiplicação
+  LDA SINAL  ; Se o sinal é 0 então estamos multiplicando 2 números com sinais iguais e não precisamos fazer nada
   JZ SOMA_RESULTADO
 
+  ; Se o sinal for 1 então precisamos trocar o sinal do resultado já que estamos multiplicando 1 positivo e 1 negativo
+
+  ; Transformo a parte baixa do PRODINT para negativo
   LDA PRODINT
   NOT
   ADD #1
   STA PRODINT
 
+  ; Transformo a parte alta do PRODINT para negativo
   LDA PRODINT+1
   NOT
   ADC #0
   STA PRODINT+1
 
-SOMA_RESULTADO:
+SOMA_RESULTADO: ; Soma PRODINT ao RESULTADO
+
   LDA PRODINT+1
-  AND #80h ; Verifica se primeiro bit e 0
-  STA SINAL
+  AND #80h
+  STA SINAL ; Salva sinal de PRODINT+1
+
   LDA RESULTADO+1
   AND #80h
-  SUB SINAL
-  STA SINAL
+  SUB SINAL ; Subtrai sinal de PRODINT+1 do sinal de RESULTADO+1
+  STA SINAL ; Salva o valor, se 0 então sinais são iguais senão são diferentes
 
-  LDA PRODINT ; Le A
-  ADD RESULTADO ; Soma B
-  STA RESULTADO ; Salva o byte baixo no primeiro endereco
+  LDA PRODINT ; Le PRODINT
+  ADD RESULTADO ; Soma RESULTADO
+  STA RESULTADO ; Salva o byte baixo
 
-  LDA PRODINT+1
-  ADC RESULTADO+1
-  STA RESULTADO+1
+  LDA PRODINT+1 ; Le PRODINT+1
+  ADC RESULTADO+1 ; Soma RESULTADO+1 com o carry
+  STA RESULTADO+1 ; Salva o byte alto
 
+  ; Verifica sinal
   LDA SINAL
-  JNZ INCR
+  JNZ INCR ; Se diferente de 0 então vai para incremento
 
+  ; Se for 0 então os sinais são iguais
+  ; Então a soma pode dar overflow
+
+  ; Salva sinal de PRODINT+1
   LDA PRODINT+1
   AND #80h
   STA SINAL
 
+  ; Subtrai sinal de RESULTADO+1 de PRODINT+1
   LDA RESULTADO+1
   AND #80h
   SUB SINAL
 
+  ; Se o resultado dessa subtração é 0 então então não houve overflow
+  ; já que o sinal do resultado é o mesmo da soma
+
+  ; Caso o resultado dessa subtração seja diferente de 0 então
+  ; na soma PRODINT+1 com RESULTADO+1 houve overflow  pois
+  ; PRODINT+1 e RESULTADO+1
   JNZ OVERFLOW
 
-
-;SOMA_RESULTADO:
-;  LDA PRODINT
-;  ADD RESULTADO
-;  STA RESULTADO
-;
-;  LDA PRODINT+1
-;  ADC RESULTADO+1
-;  STA RESULTADO+1
-;
-;  LDA #0
-;  STA PRODINT
-;  STA PRODINT+1
-;
 INCR:
                 ; I++
                 LDA I
@@ -203,20 +227,25 @@ INCR:
 
 
 PRINTAR:         ; A PARTIR DAQUI SERVE PARA PRINTAR O RESULTADO
+
+                 ;Printa 4 bits mais altos de RESULTADO+1
                  LDA RESULTADO+1
                  PUSH
                  JSR ROTINA_ALTA
 
+                 ;Printa 4 bits mais baixos de RESULTADO+1
                  LDA RESULTADO+1
                  PUSH
                  LDA CARACTER
                  PUSH
                  JSR ROTINA_BAIXA
 
+                 ;Printa 4 bits mais altos de RESULTADO
                  LDA RESULTADO
                  PUSH
                  JSR ROTINA_ALTA
 
+                 ;Printa 4 bits mais baixos de RESULTADO
                  LDA RESULTADO
                  PUSH
                  LDA CARACTER
@@ -226,18 +255,20 @@ PRINTAR:         ; A PARTIR DAQUI SERVE PARA PRINTAR O RESULTADO
                  JMP FIM
 
 
-ROTINA_ALTA:     STS SP
+ROTINA_ALTA: ; Rotina para pintar a parte alta de uma variável de 8 bits
+                 STS SP ; Salva Stack pointer
                  POP
                  POP
 
-                 POP
+                 POP ; Pega número de 8 bits
+                 ; 4 shifts para direita
                  SHR
                  SHR
                  SHR
                  SHR
-                 STA CARACTER
+                 STA CARACTER ; Guardo os bits que seram o caracter
 
-                 ; TESTO SE O NÚMERO É MENOR QUE AH OU 10 DECIMAL
+                 ; TESTO SE O NÚMERO É MENOR QUE 0Ah OU 10 DECIMAL
                  SUB #10
                  JN  DEC ; CASO SEJA MENOR QUE 10 PULO PARA ONDE CONVERTE DE 0 A 9 PARA ASCII
                  ; CASO SEJA MAIOR CONINUO PARA CONVERTER DE LETRA PARA ASCII
@@ -248,32 +279,36 @@ ROTINA_ALTA:     STS SP
 
                  LDS SP
                  RET
-ROTINA_BAIXA:
-                STS SP
+ROTINA_BAIXA: ; Rotina para pintar a parte alta de uma variável de 8 bits
+                STS SP ; Salva Stack pointer
                 POP
                 POP
 
-                POP
+                ;O código a seguir serve para excluir os 4 bits mais significativos de uma variável
+                POP ; Pego o número de 4 bits printado anteriormente
                 SHL
                 SHL
                 SHL
                 SHL
-                STA CARACTER
+                ; Dou 4 shifts pra esquerda usando os 8 bits
+                STA CARACTER ; Salvo em caracter
 
 
-                POP
-                SUB CARACTER
-                STA CARACTER
+                POP ; Pego o número com 8 bits
+                SUB CARACTER ; Excluo os 4 bits mais significativos
+                STA CARACTER ; Guardo na variável o caracter
 
+                ; TESTO SE O NÚMERO É MENOR QUE 0Ah OU 10 DECIMAL
                 SUB #10
-                JN  DEC
+                JN  DEC ; CASO SEJA MENOR QUE 10 PULO PARA ONDE CONVERTE DE 0 A 9 PARA ASCII
+                 ; CASO SEJA MAIOR CONINUO PARA CONVERTER DE LETRA PARA ASCII
 
                 LDA CARACTER
                 ADD #37H
                 OUT BANNER
 
                 LDS SP
-                RET
+                RET ; Fim da rotina
 
 
 DEC: ; CONVERTE NÚMEROS DECIMAIS PARA ASCII
@@ -282,7 +317,7 @@ DEC: ; CONVERTE NÚMEROS DECIMAIS PARA ASCII
                  OUT BANNER
 
                  LDS SP
-                 RET
+                 RET ; Fim da rotina
 
 
 

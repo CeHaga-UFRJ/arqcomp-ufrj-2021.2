@@ -20,7 +20,7 @@ STR3: STR "BCAAABBC"
 DW 0
 
 ORG 260h ; Elemento a ser adicionado
-STRING: STR "ABCCCCCC"
+STRING: STR "CBCCCCCC"
 DW 0 ; Com ponteiro nulo, a ser modificado
 
 ORG 400h ; Variaveis da main
@@ -378,20 +378,4 @@ RET_GERAL:
   RET
 
 END 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
